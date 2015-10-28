@@ -5,7 +5,7 @@ int main()
 {
 	Mysql mysql;
 
-	mysql.init("foo");
+	mysql.init("ChatRoom");
 
 	// run this kind of command, the return result ptr will be NULL
 	char buff[MAXLINE];

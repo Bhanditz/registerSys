@@ -16,7 +16,7 @@ public:
 		if not exist then create it, then clear the connection before connect to
 		the target database
 	*/
-	void init(const char* database, const char* host="localhost", const char* name="root", const char* pwd="")
+	void init(const char* database, const char* host="localhost", const char* name="chatroom", const char* pwd="753951")
 	{
 		// just connect to sql server
 		connectToSql(NULL, host, name, pwd);
