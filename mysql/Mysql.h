@@ -26,7 +26,6 @@ public:
 		connectToSql(database, host, name, pwd);
 	}	
 
-
 	/* return the result ptr for caller to parse
 	   the result ptr need to free by caller
 	*/
@@ -133,6 +132,10 @@ private:
 		}
 	}
 
+	virtual void createTable(const char* command) 
+	{
+		return runCommand(command);
+	}
 
 	/* carry out the command that does not have return value
 		if success return 0, fail return -1
