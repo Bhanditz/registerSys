@@ -17,6 +17,9 @@
 #include "Aux.h"
 #include "unp.h"
 
+#define SERVER_IP	"127.0.0.1"
+#define LOGIN_PORT	9511
+
 class Login
 {
 
@@ -24,12 +27,11 @@ public:
 
 	void loginProcess()
 	{
+		int sockfd = connectLoginService();
+
 		cout << "----------------------------------------------------------------\n";
 		cout << "                       L O G        I N                         \n";
 		cout << "----------------------------------------------------------------\n";
-		cout << "Please enter your user name: ";	
-		scanfLine(user_name);
-		
 	}
 
 
@@ -49,15 +51,11 @@ private:
 	char lasttime_login[256];
 	char thistime_login[256];
 
-	bool verifyUserName(const char* user_name)
+	int connectLoginService()
 	{
-		
-	}
+		return connectToServer(SERVER_IP, LOGIN_PORT);
+	} 
 
-	bool verifyUserPwd(const char( user_name, const char* password)
-	{
-
-	}
 };
 
 

@@ -10,8 +10,8 @@
 
 #include "Mysql.h"
 
-
-class RSmysql : public Mysql
+// use for register system and login system
+class RSLSmysql : public Mysql
 {
 
 public:
@@ -58,7 +58,18 @@ public:
 		else return true;
 	}
 
-	
+	bool isPwdValid(const char* user_name, const char* password)
+	{
+		char		command[MAXLINE];
+		MYSQL_ROW	row;
+
+		snprintf(command, MAXLINE, "SELECT * FROM Users WHERE UserName='%s'", user_name);
+		row = selectRow(command);	
+		if(row == NULL) throwError("[log in]: getUserPwd error");	
+		if(!strcmp(row[2], password)) return true;
+		return false;
+	}
+
 
 
 private:
@@ -96,17 +107,6 @@ private:
 		runCommand(buff);
 	}	
 
-	bool isPwdValid(const char* user_name, const char* password)
-	{
-		char		command[MAXLINE];
-		MYSQL_ROW	row;
-
-		snprintf(command, MAXLINE, "SELECT * FROM Users WHERE UserName='%s'", user_name);
-		row = selectRow(command);	
-		if(row == NULL) throwError("[log in]: getUserPwd error");	
-		if(!strcmp(row[2], password)) return true;
-		return false;
-	}
 
 };
 
