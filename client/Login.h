@@ -20,6 +20,9 @@
 #define SERVER_IP	"127.0.0.1"
 #define LOGIN_PORT	9511
 
+enum toClient { DefaultC='0', LoginSuccess, LoginFail, UserNotExist, PwdError};
+enum toServer { DefaultS='0', KeepTry, TurnToRegister, Quit };
+
 class Login
 {
 
@@ -27,11 +30,18 @@ public:
 
 	void loginProcess()
 	{
-		int sockfd = connectLoginService();
+		char flag;
+		int sockfd;
 
-		cout << "----------------------------------------------------------------\n";
-		cout << "                       L O G        I N                         \n";
-		cout << "----------------------------------------------------------------\n";
+		sockfd  = connectLoginService();
+		showTitle();
+		while(1) {
+			recvMsg(buffer);
+			flag = getBufferFlag();
+			cout << buffer+1 << endl;			
+			if(flag == LoginFail) exit(0);	
+		}
+
 	}
 
 
@@ -43,18 +53,63 @@ public:
 private:
 
 	/* the char buffer size limit is according to MYSQL*/
-	char user_name[256];
-	char password[256];
+	//char user_name[256];
+	//char password[256];
 
-	char email[256]; // this tag is to remind adding other info
-	char gender[256];
-	char lasttime_login[256];
-	char thistime_login[256];
+	// use for  communication with server	
+	char buffer[257];
+	char userInput[256];
 
 	int connectLoginService()
 	{
 		return connectToServer(SERVER_IP, LOGIN_PORT);
 	} 
+
+	void sendMsg(const char* sendline)
+	{
+		int nwrite = 0;
+		
+		if((nwrite = write(connfd, sendline, strlen(sendline))) < 0) {
+			throwError("[login]: write error");
+		}	
+	}
+
+	void recvMsg(char* recvline)
+	{
+		int nread = 0;	
+	
+		bzero(recvline, sizeof(recvline));
+		nread = read(connfd, recvline, sizeof(recvline));
+		if(nread < 0) {
+			throwError("[login]: read error");
+		} else if(nread == 0) {
+			cout << "\n[ERROR]: server has shut down" << endl;
+			exit(0)
+		}
+	}
+	
+	void setBufferData(const char* data) 
+	{
+		bzero(buffer+1, sizeof(buffer)-1);
+		strcpy(buffer+1, data);
+	}
+	
+	void setBufferFlag(const char c)
+	{
+		buffer[0] = c;	
+	}	
+
+	char getBufferFlag()
+	{
+		return buffer[0];
+	}
+
+	void showTitle()
+	{
+		cout << "****************\n";
+		cout << "*    LOG IN    *\n";
+		cout << "****************\n";
+	}	
 
 };
 

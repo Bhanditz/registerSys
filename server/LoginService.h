@@ -44,16 +44,16 @@ private:
 		bool res = checkUserName(DefaultC);	
 		while(!res) {
 			if(count == 3) overMaxTrying();
-			res = checkUserName(ChkFail);
+			res = checkUserName(UserNotExist);
 			count++;
 		}
 		strcpy(username, buffer+1);
 		
 		count = 1;
-		res = checkPassword(ChkSuccess);	
+		res = checkPassword(DefaultC);	
 		while(!res) {
 			if(count == 3) overMaxTrying();
-			res = checkPassword(ChkFail);
+			res = checkPassword(PwdError);
 			count++;
 		}
 
