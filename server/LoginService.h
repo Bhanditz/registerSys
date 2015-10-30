@@ -27,14 +27,19 @@ public:
 	}
 
 	LoginService(int fd, map<int, int> *c_table, map<int, Service*> *s_table) 
-		: Service(fd, c_table, s_table) {}
+		: Service(fd, c_table, s_table) 
+	{
+		mysql.init("ChatRoom");	
+		mysql.createUserTable();
+	}
 
 
 private:
 
 	RSLSmysql mysql;	
 
-	char buffer[257];   // use to extract the flag and data
+	// the 256 lenght limit now is set in client
+	char buffer[MAXLINE];   // use to extract the flag and data
 	char username[256];
 
 
@@ -81,7 +86,7 @@ private:
 		bool res = checkFunc(flag);	
 		while(!res) {
 			if(count == 3) overMaxTrying();
-			res = checkFunc(ChkFail);
+			res = checkFunc(LoginFail);
 			count++;
 		}
 
@@ -100,7 +105,7 @@ private:
 		setBufferFlag(flag);
 		setBufferData("Please enter your username: ");	
 		sendMsg(buffer);
-		recvMsg(buffer);
+		recvMsg(buffer, sizeof(buffer));
 		checkRespFlag();
 		return mysql.isUserExist(buffer+1);
 	}
@@ -113,7 +118,7 @@ private:
 		setBufferFlag(flag);
 		setBufferData("Please enter your password: ");
 		sendMsg(buffer);
-		recvMsg(buffer);
+		recvMsg(buffer, sizeof(buffer));
 		checkRespFlag();
 		return mysql.isPwdValid(username, buffer+1);
 	} 
@@ -135,6 +140,7 @@ private:
 	
 	void setBufferFlag(const char c)
 	{
+		cout << "Set flag as: " << c << endl;
 		buffer[0] = c;	
 	}	
 

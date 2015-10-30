@@ -75,27 +75,30 @@ protected:
 		if((nwrite = write(connfd, sendline, strlen(sendline))) < 0) {
 			throwError("[Service]: write error");
 		}	
+		cout << "Send out " << nwrite << "-bytes data..." << endl; 
 	}
 
-	void recvMsg(char* recvline)
+	void recvMsg(char* recvline, size_t len)
 	{
 		int nread = 0;	
 	
-		bzero(recvline, sizeof(recvline));
-		nread = read(connfd, recvline, sizeof(recvline));
+		bzero(recvline, len);
+		nread = read(connfd, recvline, len);
 		if(nread < 0) {
 			throwError("[Service]: read error");
 		} else if(nread == 0) {
 			cout << "\n[WARNING]: client has shut down" << endl;
 			processClientDown();
 		}
-		cout << "Msg from client: " << recvline << endl;
+		cout << "Receive " << nread  << "-bytes data" << endl;
 	}
 
 	/* use to delete the conn fd in table when the detect the client shut down */
 	void processClientDown()
 	{
-		cout << "\n[INFO]: Client<" << conn_table->at(connfd) << ">  has shut down" << endl;
+		if(conn_table->find(connfd) != conn_table->end()) {
+			cout << "\n[INFO]: Client<" << conn_table->at(connfd) << ">  has shut down" << endl;
+		}
 		// delete the corresponding fd in table
 		deleteConnfdFromTable();
 	}
