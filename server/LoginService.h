@@ -11,10 +11,9 @@
 #include "RSLSmysql.h"
 
 /* Communication:	for client: 0> default 1> keep trying 2> turn to register(quit) 3> quit
-					for server: 0> default 1> check info success 2> check info error
-								3> login success 4> login fail
+					for server: 0> default 1> login success 2> login fail 3> username not exist $> password error
 */
-enum toClient { DefaultC='0', ChkSuccess, ChkFail, LoginSuccess, LoginFail};
+enum toClient { DefaultC='0', LoginSuccess, LoginFail, UserNotExist, PwdError};
 enum toServer { DefaultS='0', KeepTry, TurnToRegister, Quit};
 
 class LoginService : public Service
