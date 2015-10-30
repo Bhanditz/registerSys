@@ -31,6 +31,7 @@ public:
 	virtual void runServiceThread() 
 	{
 		serviceThread = thread(&Service::serviceProcess, this);	
+		quit();
 	}
 
 	Service(int fd, map<int, int> *c_table, map<int, Service*> *s_table) 
@@ -75,7 +76,7 @@ protected:
 		if((nwrite = write(connfd, sendline, strlen(sendline))) < 0) {
 			throwError("[Service]: write error");
 		}	
-		cout << "Send out " << nwrite << "-bytes data..." << endl; 
+		//cout << "Send out " << nwrite << "-bytes data..." << endl; 
 	}
 
 	void recvMsg(char* recvline, size_t len)
@@ -90,7 +91,7 @@ protected:
 			cout << "\n[WARNING]: client has shut down" << endl;
 			processClientDown();
 		}
-		cout << "Receive " << nread  << "-bytes data" << endl;
+		//cout << "Receive " << nread  << "-bytes data" << endl;
 	}
 
 	/* use to delete the conn fd in table when the detect the client shut down */

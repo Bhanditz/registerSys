@@ -45,6 +45,7 @@ private:
 
 	void serviceProcess(map<int, int> *conn_table)
 	{
+		//check the username, most for 3 times
 		int count = 1;
 		bool res = checkUserName(DefaultC);	
 		while(!res) {
@@ -54,6 +55,7 @@ private:
 		}
 		strcpy(username, buffer+1);
 		
+		//check the password, most for 3 times
 		count = 1;
 		res = checkPassword(DefaultC);	
 		while(!res) {
@@ -64,8 +66,6 @@ private:
 
 		//inform the client log in success
 		notifySuccess();	
-
-		quit();					
 	}
 
 	/* in the fucture development, only when the login success, 
@@ -77,6 +77,7 @@ private:
 		setBufferFlag(LoginSuccess);	
 		setBufferData("Login Successful!");
 		sendMsg(buffer);
+		cout << "Client<" << username << "> login successfully" << endl;
 	}
 	
 	// pass the check function into it
@@ -140,7 +141,6 @@ private:
 	
 	void setBufferFlag(const char c)
 	{
-		cout << "Set flag as: " << c << endl;
 		buffer[0] = c;	
 	}	
 
