@@ -82,21 +82,15 @@ private:
 
 	void loginProcess()
 	{
-	cout << "== enter login thread ==" << endl;
 		char input[MAXLINE];
 	
-		sockfd  = connectLoginService();
 		showTitle();
 
 		while(1) {
-			cout << "== block in write sem ==" << endl;
 			sem_wait(&sem_w);
-			cout << "== get the write sem ==" << endl;
 			checkFlag();
-			cout << "recvline: " << recvline+1 << endl;
 			showMsg();
 			sem_post(&sem_r);
-			cout << "== posts for read sem ==" << endl; 
 			getUserInput(input, sizeof(input));
 			setBufferFlag(DefaultS);
 			setBufferData(input);
@@ -191,25 +185,21 @@ private:
 	void sendMsg()
 	{
 		int nwrite = 0;
-		cout << "length of sendline: " << strlen(sendline) << endl;	
 		if((nwrite = write(sockfd, sendline, strlen(sendline))) < 0) {
 			throwError("[login]: write error");
 		}	
-
+#ifdef _DEBUG
 		cout << "Send out " << nwrite << "-bytes data" << endl;
+#endif
 	}
 
 	void recvMsg()
 	{
-	cout << "== enter recv msg thread ==" << endl;
 		int nread = 0;	
 
 		while(1) {	
-			cout << "== block in read sem ==" << endl;
 			sem_wait(&sem_r);
-			cout << "== get the read sem ==" << endl;
 			bzero(recvline, sizeof(recvline));
-			cout << "waiting for incoming msg..." << endl;
 			nread = read(sockfd, recvline, sizeof(recvline));
 			if(nread < 0) {
 				throwError("[login]: read error");
@@ -217,9 +207,10 @@ private:
 				cout << "\n[ERROR]: server has shut down" << endl;
 				exit(0);
 			}
+#ifdef _DEBUG
 			cout << "Receive " << nread << "-bytes data" << endl;
+#endif
 			sem_post(&sem_w);
-			cout << "== post for write sem ==" << endl;
 		}
 	}
 	
@@ -227,7 +218,6 @@ private:
 	{
 		bzero(sendline+1, sizeof(sendline)-1);
 		strcpy(sendline+1, data);
-		cout << "****copy " << strlen(data)  << "-bytes data in to sendline" << endl;
 	}
 	
 	void setBufferFlag(const char c)
