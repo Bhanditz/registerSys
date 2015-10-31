@@ -13,6 +13,8 @@
 #define _LOGIN_H
 
 #include <iostream>
+#include <thread>
+#include <semaphore.h>
 
 #include "Aux.h"
 #include "unp.h"
@@ -28,26 +30,26 @@ class Login
 
 public:
 
-	void loginProcess()
+	void runLoginThread()
 	{
-		char flag;
-		int sockfd;
-
-		sockfd  = connectLoginService();
-		showTitle();
-		while(1) {
-			recvMsg(buffer);
-			flag = getBufferFlag();
-			cout << buffer+1 << endl;			
-			if(flag == LoginFail) exit(0);	
-		}
-
+		loginThread = thread(&Login::loginProcess, this);
+		readThread = thread(&Login::recvMsg, this);	
 	}
 
+	Login() 
+	{
+		sockfd  = connectLoginService();
+		sem_init(&sem_w, 0, 0);
+		sem_init(&sem_r, 0, 1);
+	}
 
-	Login() {}
-
-	~Login() {}
+	~Login() 
+	{
+		loginThread.join();
+		readThread.join();
+		sem_destroy(&sem_w);
+		sem_destroy(&sem_r);
+	}
 
 
 private:
@@ -56,60 +58,188 @@ private:
 	//char user_name[256];
 	//char password[256];
 
+	int sockfd;
+
 	// use for  communication with server	
-	char buffer[257];
-	char userInput[256];
+	char sendline[MAXLINE];
+	char recvline[MAXLINE];
+
+	thread loginThread;
+	
+	/* use to receive the msg sent from server.
+		use one another thread to listen to the server because it can
+		monitor the server condition at real time, such as server 
+		shut down
+	*/
+	thread readThread;
+	
+	/* use for the exclusive of login thread and read thread
+		separate set in loginProcess() and recvMsg()
+	*/
+	sem_t sem_w;
+	sem_t sem_r;
+
+
+	void loginProcess()
+	{
+	cout << "== enter login thread ==" << endl;
+		char input[MAXLINE];
+	
+		sockfd  = connectLoginService();
+		showTitle();
+
+		while(1) {
+			cout << "== block in write sem ==" << endl;
+			sem_wait(&sem_w);
+			cout << "== get the write sem ==" << endl;
+			checkFlag();
+			cout << "recvline: " << recvline+1 << endl;
+			showMsg();
+			sem_post(&sem_r);
+			cout << "== posts for read sem ==" << endl; 
+			getUserInput(input, sizeof(input));
+			setBufferFlag(DefaultS);
+			setBufferData(input);
+			sendMsg();			
+		}
+	}
 
 	int connectLoginService()
 	{
 		return connectToServer(SERVER_IP, LOGIN_PORT);
 	} 
 
-	void sendMsg(const char* sendline)
+	void getUserInput(char *input, size_t len)
 	{
-		int nwrite = 0;
-		
-		if((nwrite = write(connfd, sendline, strlen(sendline))) < 0) {
-			throwError("[login]: write error");
-		}	
+		while(1) {
+			fgets(input, len, stdin);
+			input[strlen(input)-1] = '\0';
+			if(strlen(input) > 255) {
+				cout << "[LOGIN]: Input too long" << endl;
+				cout << " Please enter again: "; 
+			} else {
+				return;
+			}
+		} 
 	}
 
-	void recvMsg(char* recvline)
+	void checkFlag() 
 	{
+		char flag = getBufferFlag();
+
+		/* overlook the Default flag here */
+		if(flag == UserNotExist) {
+			cout << "[LOGIN]: User name is not existed" << endl;
+			showChoice();
+		} else if(flag == PwdError) {
+			cout << "[LOGIN]: Password is error" << endl;
+			showChoice();
+		} else if(flag == LoginFail) {
+			cout << "[LOGIN]: Login fail..." << endl;
+			cout << "[LOGIN]: Waiting for System exit..." << endl;
+			cout << endl;
+			exit(0);
+		} else if(flag == LoginSuccess) {
+			// turn to the main service interface		
+		}  	
+	}
+
+	void showChoice()
+	{
+		char input[MAXLINE]; 
+		
+		while(1) {
+			cout << "---------------------" << endl;	
+			cout << "1> Keep Trying"		<< endl; 
+			cout << "2> Go To Get Register" << endl;
+			cout << "3> Quit"				<< endl;
+			cout << "---------------------" << endl;
+			cout << "Enter your choice: ";
+			fgets(input, MAXLINE, stdin);
+			input[strlen(input)-1] = '\0';
+			if(!strncmp(input, "1", strlen(input))) {
+				setBufferFlag(KeepTry);
+				break;	
+			} else if(!strcmp(input, "2")) {
+				cout << "Go to register module" << endl;
+				setBufferFlag(TurnToRegister);
+				// here tmporary use exit 
+				exit(0);
+			} else if(!strcmp(input, "3")) {
+				cout << "System is exiting..." << endl;
+				setBufferFlag(Quit);
+				exit(0);
+			} else {
+				cout << "Invalid input: please enter 1, 2 or 3" << endl;
+			}	
+		}
+	}
+
+	void showTitle()
+	{
+		cout << "****************" << endl;
+		cout << "*    LOG IN    *" << endl;
+		cout << "****************" << endl;
+	}	
+
+	void showMsg() 
+	{
+		cout << endl;
+		cout << recvline+1 << endl;
+	}
+
+	void sendMsg()
+	{
+		int nwrite = 0;
+		cout << "length of sendline: " << strlen(sendline) << endl;	
+		if((nwrite = write(sockfd, sendline, strlen(sendline))) < 0) {
+			throwError("[login]: write error");
+		}	
+
+		cout << "Send out " << nwrite << "-bytes data" << endl;
+	}
+
+	void recvMsg()
+	{
+	cout << "== enter recv msg thread ==" << endl;
 		int nread = 0;	
-	
-		bzero(recvline, sizeof(recvline));
-		nread = read(connfd, recvline, sizeof(recvline));
-		if(nread < 0) {
-			throwError("[login]: read error");
-		} else if(nread == 0) {
-			cout << "\n[ERROR]: server has shut down" << endl;
-			exit(0)
+
+		while(1) {	
+			cout << "== block in read sem ==" << endl;
+			sem_wait(&sem_r);
+			cout << "== get the read sem ==" << endl;
+			bzero(recvline, sizeof(recvline));
+			cout << "waiting for incoming msg..." << endl;
+			nread = read(sockfd, recvline, sizeof(recvline));
+			if(nread < 0) {
+				throwError("[login]: read error");
+			} else if(nread == 0) {
+				cout << "\n[ERROR]: server has shut down" << endl;
+				exit(0);
+			}
+			cout << "Receive " << nread << "-bytes data" << endl;
+			sem_post(&sem_w);
+			cout << "== post for write sem ==" << endl;
 		}
 	}
 	
 	void setBufferData(const char* data) 
 	{
-		bzero(buffer+1, sizeof(buffer)-1);
-		strcpy(buffer+1, data);
+		bzero(sendline+1, sizeof(sendline)-1);
+		strcpy(sendline+1, data);
+		cout << "****copy " << strlen(data)  << "-bytes data in to sendline" << endl;
 	}
 	
 	void setBufferFlag(const char c)
 	{
-		buffer[0] = c;	
+		sendline[0] = c;	
 	}	
 
 	char getBufferFlag()
 	{
-		return buffer[0];
+		return recvline[0];
 	}
 
-	void showTitle()
-	{
-		cout << "****************\n";
-		cout << "*    LOG IN    *\n";
-		cout << "****************\n";
-	}	
 
 };
 
