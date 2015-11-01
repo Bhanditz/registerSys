@@ -13,8 +13,8 @@ int main()
 
 	map<int, int> c_table;
 	map<int, Service*> s_table;
-	LoginService service(connfd, &c_table, &s_table);
-	service.runServiceThread();
+	Service *service = new LoginService(connfd, &c_table, &s_table);
+	service->runServiceThread();
 
 	while(1);
 

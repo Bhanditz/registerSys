@@ -24,6 +24,8 @@ public:
 	void runServiceThread()
 	{
 		serviceThread = thread(&LoginService::serviceProcess, this, conn_table);
+		serviceThread.join();
+		quit();
 	}
 
 	LoginService(int fd, map<int, int> *c_table, map<int, Service*> *s_table) 
@@ -49,8 +51,12 @@ private:
 		int count = 1;
 		bool res = checkUserName(DefaultC);	
 		while(!res) {
-			if(count == 3) overMaxTrying();
+			if(count == 3) {
+				overMaxTrying();
+				return;
+			}
 			res = checkUserName(UserNotExist);
+			if(checkRespFlag() < 0) return;
 			count++;
 		}
 		strcpy(username, buffer+1);
@@ -59,8 +65,12 @@ private:
 		count = 1;
 		res = checkPassword(DefaultC);	
 		while(!res) {
-			if(count == 3) overMaxTrying();
+			if(count == 3) {
+				overMaxTrying();
+				return;
+			}
 			res = checkPassword(PwdError);
+			if(checkRespFlag() < 0) return;
 			count++;
 		}
 
@@ -80,25 +90,11 @@ private:
 		cout << "Client<" << username << "> login successfully" << endl;
 	}
 	
-	// pass the check function into it
-	void checkElement(const char flag, bool (*checkFunc)(const char flag))
-	{
-		int count = 1;
-		bool res = checkFunc(flag);	
-		while(!res) {
-			if(count == 3) overMaxTrying();
-			res = checkFunc(LoginFail);
-			count++;
-		}
-
-	}
-
 	void overMaxTrying()
 	{
 		setBufferFlag(LoginFail);
 		setBufferData("Over maximum trying times!");
 		sendMsg(buffer);
-		quit();
 	}
 
 	bool checkUserName(const char flag)
@@ -107,7 +103,6 @@ private:
 		setBufferData("Please enter your username: ");	
 		sendMsg(buffer);
 		recvMsg(buffer, sizeof(buffer));
-		checkRespFlag();
 		return mysql.isUserExist(buffer+1);
 	}
 
@@ -120,17 +115,17 @@ private:
 		setBufferData("Please enter your password: ");
 		sendMsg(buffer);
 		recvMsg(buffer, sizeof(buffer));
-		checkRespFlag();
 		return mysql.isPwdValid(username, buffer+1);
 	} 
 
 	// check the flag client set in the respond
-	void checkRespFlag()
+	int checkRespFlag()
 	{
 		char flag = getBufferFlag();	
 		if(flag == TurnToRegister || flag == Quit) {
-			quit();
+			return -1;
 		}	
+		return 0;
 	}
 
 	void setBufferData(const char* data) 

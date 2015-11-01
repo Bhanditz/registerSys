@@ -31,6 +31,7 @@ public:
 	virtual void runServiceThread() 
 	{
 		serviceThread = thread(&Service::serviceProcess, this);	
+		serviceThread.join();
 		quit();
 	}
 
@@ -41,10 +42,7 @@ public:
 		service_table = s_table;
 	}
    
-	virtual ~Service() 
-	{
-		serviceThread.join();
-	}
+	virtual ~Service() {}
 
 protected:
 
@@ -56,10 +54,12 @@ protected:
 
 	virtual void serviceProcess() 
 	{
-		throwError("[Service]: empty service process method");
+		cout << "[Service]: empty service process method" << endl; 
 	}
 	
-	// the service active quit
+	/* the service active quit
+		quit() cannot be used inside the thread dut to delete(this) 
+	*/
 	void quit()
 	{
 		close(connfd);
@@ -76,7 +76,7 @@ protected:
 		if((nwrite = write(connfd, sendline, strlen(sendline))) < 0) {
 			throwError("[Service]: write error");
 		}	
-		//cout << "Send out " << nwrite << "-bytes data..." << endl; 
+		cout << "Send out " << nwrite << "-bytes data..." << endl; 
 	}
 
 	void recvMsg(char* recvline, size_t len)
@@ -84,6 +84,7 @@ protected:
 		int nread = 0;	
 	
 		bzero(recvline, len);
+		cout << "waiting for incoming msg" << endl;
 		nread = read(connfd, recvline, len);
 		if(nread < 0) {
 			throwError("[Service]: read error");
@@ -91,7 +92,7 @@ protected:
 			cout << "\n[WARNING]: client has shut down" << endl;
 			processClientDown();
 		}
-		//cout << "Receive " << nread  << "-bytes data" << endl;
+		cout << "Receive " << nread  << "-bytes data" << endl;
 	}
 
 	/* use to delete the conn fd in table when the detect the client shut down */

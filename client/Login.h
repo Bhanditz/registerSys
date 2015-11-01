@@ -193,6 +193,7 @@ private:
 #endif
 	}
 
+	// since this recvMsg() use in a separated thread, so add a while loop here
 	void recvMsg()
 	{
 		int nread = 0;	
