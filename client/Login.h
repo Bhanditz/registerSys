@@ -18,11 +18,12 @@
 
 #include "Aux.h"
 #include "unp.h"
+#include "ReadPwd.h"
 
 #define SERVER_IP	"127.0.0.1"
 #define LOGIN_PORT	9511
 
-enum toClient { DefaultC='0', LoginSuccess, LoginFail, UserNotExist, PwdError};
+enum toClient { DefaultC='0', LoginSuccess, LoginFail, UserNotExist, PwdError, PWD};
 enum toServer { DefaultS='0', KeepTry, TurnToRegister, Quit };
 
 class Login
@@ -91,7 +92,12 @@ private:
 			checkFlag();
 			showMsg();
 			sem_post(&sem_r);
-			getUserInput(input, sizeof(input));
+			if(!isPwdFlag()) {
+				getUserInput(input, sizeof(input));
+			} else	{
+				readPassword(input, sizeof(input));
+				cout << endl;
+			}
 			setBufferFlag(DefaultS);
 			setBufferData(input);
 			sendMsg();			
@@ -178,8 +184,7 @@ private:
 
 	void showMsg() 
 	{
-		cout << endl;
-		cout << recvline+1 << endl;
+		cout << recvline+1;
 	}
 
 	void sendMsg()
@@ -225,6 +230,13 @@ private:
 	{
 		sendline[0] = c;	
 	}	
+
+	bool isPwdFlag()
+	{
+		char c = getBufferFlag();
+		if(c == PWD || c == PwdError) return true;	
+		return false;
+	}
 
 	char getBufferFlag()
 	{

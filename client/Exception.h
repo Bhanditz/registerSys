@@ -6,6 +6,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <stdio.h>
+#include <errno.h>
 
 #define throwError(arg) throw Exception((arg), __FILE__, __LINE__);
 
