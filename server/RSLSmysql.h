@@ -1,6 +1,7 @@
 
 /* class RSmysql is inherited from class Mysql,
-	which has the specific method to build up the API of register system
+	which has the specific method to build up the API of 
+	register service & login service
 */
 
 #ifndef _RSMYSQL_H
@@ -16,25 +17,29 @@ class RSLSmysql : public Mysql
 
 public:
 
-	// Users: UserName, PassWord
 	void createUserTable()
 	{
+		// to store the username and password	
 		createTable("Users", 2, "UserName", "varchar(255)", "PassWord", "varchar(255)");
+		// to store the information of a user
+		createTable("UserData", 8, "UserName", "varchar(255)", "Gender", "varchar(255)", "Email", "varchar(255)", "Phone", "varchar(255)", "Street", "varchar(255)", "City", "varchar(255)", "State", "varchar(255)", "Zipcode", "varchar(255)");
 	}
 
 	void addNewUser(const char* user_name, const char* password)	
 	{
 		char	command[MAXLINE];
 
-		if(isUserExist(user_name)) {
-			throwError("[mysql]: the input username has been existed");
-		}
-		if(strlen(password) < 6) {
-			throwError("[new user]: password is set too short");
-		}
 		snprintf(command, MAXLINE, "INSERT INTO Users (UserName, PassWord) Values ('%s', '%s')", user_name, password);
 		runCommand(command);
 	}  
+
+	void addUserInfo(char info[8][MAXLINE])
+	{
+		char	command[MAXLINE];
+
+		snprintf(command, MAXLINE, "INSERT INTO UserData (UserName, Gender, Email, Phone, Street, City, State, Zipcode) Values ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')", info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
+		runCommand(command);
+	}
 
 	// use for check the type-in username and pwd when user log in
 	bool isUserValid(const char* name, const char* pwd) 

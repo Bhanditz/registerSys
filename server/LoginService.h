@@ -1,35 +1,32 @@
-
-/*  use a struct to store the flags that control the process, and the info append on it.	
-	|--some flags --| ------------ data --------------|     <-- the packet end out;
-	And the prompt in user interface is controlled and set by server side as well.
+/* mainly to check the validity of username and password
+	the user enter and to let user into the chatroom service.
+	After login successful, it should produce a user object to
+	go on the other service 
 */
 
 #ifndef _LOGINSERVICE_H
 #define _LOGINSERVICE_H
 
-#include "Service.h"
+#include "SService.h"
 #include "RSLSmysql.h"
 
-/* Communication:	for client: 0> default 1> keep trying 2> turn to register(quit) 3> quit
-					for server: 0> default 1> login success 2> login fail 3> username not exist $> password error
-*/
-enum toClient { DefaultC='0', LoginSuccess, LoginFail, UserNotExist, PwdError};
-enum toServer { DefaultS='0', KeepTry, TurnToRegister, Quit};
+#define TRY_NUM		3
 
-class LoginService : public Service
+
+class LoginService : public SService
 {
 
 public:
 
 	void runServiceThread()
 	{
-		serviceThread = thread(&LoginService::serviceProcess, this, conn_table);
+		serviceThread = thread(&LoginService::serviceProcess, this);
 		serviceThread.join();
 		quit();
 	}
 
-	LoginService(int fd, map<int, int> *c_table, map<int, Service*> *s_table) 
-		: Service(fd, c_table, s_table) 
+	LoginService(int fd, map<int, int> *c_table, map<int, SService*> *s_table) 
+		: SService(fd, c_table, s_table) 
 	{
 		mysql.init("ChatRoom");	
 		mysql.createUserTable();
@@ -40,18 +37,14 @@ private:
 
 	RSLSmysql mysql;	
 
-	// the 256 lenght limit now is set in client
-	char buffer[MAXLINE];   // use to extract the flag and data
-	char username[256];
 
-
-	void serviceProcess(map<int, int> *conn_table)
+	void serviceProcess()
 	{
 		//check the username, most for 3 times
 		int count = 1;
 		bool res = checkUserName(DefaultC);	
 		while(!res) {
-			if(count == 3) {
+			if(count == TRY_NUM) {
 				overMaxTrying();
 				return;
 			}
@@ -63,9 +56,9 @@ private:
 		
 		//check the password, most for 3 times
 		count = 1;
-		res = checkPassword(DefaultC);	
+		res = checkPassword(Password);	
 		while(!res) {
-			if(count == 3) {
+			if(count == TRY_NUM) {
 				overMaxTrying();
 				return;
 			}
@@ -128,22 +121,6 @@ private:
 		return 0;
 	}
 
-	void setBufferData(const char* data) 
-	{
-		bzero(buffer+1, sizeof(buffer)-1);
-		strcpy(buffer+1, data);
-	}
-	
-	void setBufferFlag(const char c)
-	{
-		buffer[0] = c;	
-	}	
-
-	char getBufferFlag()
-	{
-		return buffer[0];
-	}
-	
 };
 
 

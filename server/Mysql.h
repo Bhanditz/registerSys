@@ -56,7 +56,7 @@ public:
 	*/
 	MYSQL_ROW selectRow(const char* command)
 	{
-		MYSQL_RES* res = query(command);
+		res = query(command);
 		MYSQL_ROW row = mysql_fetch_row(res);	
 		freeResPtr();
 		return row;	

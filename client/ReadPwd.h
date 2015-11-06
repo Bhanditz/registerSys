@@ -1,5 +1,5 @@
-#ifndef _GETPWD_H
-#define _GETPWD_H
+#ifndef _READPWD_H
+#define _READPWD_H
 
 #include <iostream>
 #include <termios.h>  
