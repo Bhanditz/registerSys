@@ -1,11 +1,13 @@
 #include "Aux.h"
+#include "unp.h"
 #include "Login.h"
+#include "Register.h"
 
 int main()
 {
-	Login login;
+	CService *service = new Register(REGIS_PORT);
 
-	login.runLoginThread();	
+	service->runServiceThread();	
 
 	while(1);
 	return 0;

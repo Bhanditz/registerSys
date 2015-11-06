@@ -1,4 +1,3 @@
-
 /*	This class uses to deal with the process of user logging in,
 	and also sets a timer, if user has long time without any operation,
 	the connection to server will disconnect and need to log in agian.
@@ -12,79 +11,33 @@
 #ifndef _LOGIN_H
 #define _LOGIN_H
 
-#include <iostream>
-#include <thread>
-#include <semaphore.h>
+#include "CService.h"
 
-#include "Aux.h"
-#include "unp.h"
-#include "ReadPwd.h"
 
-#define SERVER_IP	"127.0.0.1"
-#define LOGIN_PORT	9511
-
-enum toClient { DefaultC='0', LoginSuccess, LoginFail, UserNotExist, PwdError, PWD};
-enum toServer { DefaultS='0', KeepTry, TurnToRegister, Quit };
-
-class Login
+class Login : public CService
 {
 
 public:
 
-	void runLoginThread()
+	void runServiceThread()
 	{
-		loginThread = thread(&Login::loginProcess, this);
+		serviceThread = thread(&Login::serviceProcess, this);
 		readThread = thread(&Login::recvMsg, this);	
-	}
 
-	Login() 
-	{
-		sockfd  = connectLoginService();
-		sem_init(&sem_w, 0, 0);
-		sem_init(&sem_r, 0, 1);
-	}
-
-	~Login() 
-	{
-		loginThread.join();
+		serviceThread.join();
 		readThread.join();
-		sem_destroy(&sem_w);
-		sem_destroy(&sem_r);
+		quit();
 	}
+
+	Login(int port) : CService(port) {}  
 
 
 private:
 
-	/* the char buffer size limit is according to MYSQL*/
-	//char user_name[256];
-	//char password[256];
-
-	int sockfd;
-
-	// use for  communication with server	
-	char sendline[MAXLINE];
-	char recvline[MAXLINE];
-
-	thread loginThread;
-	
-	/* use to receive the msg sent from server.
-		use one another thread to listen to the server because it can
-		monitor the server condition at real time, such as server 
-		shut down
-	*/
-	thread readThread;
-	
-	/* use for the exclusive of login thread and read thread
-		separate set in loginProcess() and recvMsg()
-	*/
-	sem_t sem_w;
-	sem_t sem_r;
-
-
-	void loginProcess()
+	void serviceProcess()
 	{
 		char input[MAXLINE];
-	
+
 		showTitle();
 
 		while(1) {
@@ -96,31 +49,11 @@ private:
 				getUserInput(input, sizeof(input));
 			} else	{
 				readPassword(input, sizeof(input));
-				cout << endl;
 			}
 			setBufferFlag(DefaultS);
 			setBufferData(input);
 			sendMsg();			
 		}
-	}
-
-	int connectLoginService()
-	{
-		return connectToServer(SERVER_IP, LOGIN_PORT);
-	} 
-
-	void getUserInput(char *input, size_t len)
-	{
-		while(1) {
-			fgets(input, len, stdin);
-			input[strlen(input)-1] = '\0';
-			if(strlen(input) > 255) {
-				cout << "[LOGIN]: Input too long" << endl;
-				cout << " Please enter again: "; 
-			} else {
-				return;
-			}
-		} 
 	}
 
 	void checkFlag() 
@@ -129,7 +62,7 @@ private:
 
 		/* overlook the Default flag here */
 		if(flag == UserNotExist) {
-			cout << "[LOGIN]: User name is not existed" << endl;
+			cout << "[LOGIN]: Username is not existed" << endl;
 			showChoice();
 		} else if(flag == PwdError) {
 			cout << "[LOGIN]: Password is error" << endl;
@@ -182,65 +115,11 @@ private:
 		cout << "****************" << endl;
 	}	
 
-	void showMsg() 
-	{
-		cout << recvline+1;
-	}
-
-	void sendMsg()
-	{
-		int nwrite = 0;
-		if((nwrite = write(sockfd, sendline, strlen(sendline))) < 0) {
-			throwError("[login]: write error");
-		}	
-#ifdef _DEBUG
-		cout << "Send out " << nwrite << "-bytes data" << endl;
-#endif
-	}
-
-	// since this recvMsg() use in a separated thread, so add a while loop here
-	void recvMsg()
-	{
-		int nread = 0;	
-
-		while(1) {	
-			sem_wait(&sem_r);
-			bzero(recvline, sizeof(recvline));
-			nread = read(sockfd, recvline, sizeof(recvline));
-			if(nread < 0) {
-				throwError("[login]: read error");
-			} else if(nread == 0) {
-				cout << "\n[ERROR]: server has shut down" << endl;
-				exit(0);
-			}
-#ifdef _DEBUG
-			cout << "Receive " << nread << "-bytes data" << endl;
-#endif
-			sem_post(&sem_w);
-		}
-	}
-	
-	void setBufferData(const char* data) 
-	{
-		bzero(sendline+1, sizeof(sendline)-1);
-		strcpy(sendline+1, data);
-	}
-	
-	void setBufferFlag(const char c)
-	{
-		sendline[0] = c;	
-	}	
-
 	bool isPwdFlag()
 	{
 		char c = getBufferFlag();
-		if(c == PWD || c == PwdError) return true;	
+		if(c == Password || c == PwdError) return true;	
 		return false;
-	}
-
-	char getBufferFlag()
-	{
-		return recvline[0];
 	}
 
 

@@ -5,8 +5,10 @@
 #include <termios.h>  
 #include <unistd.h>  
 
+#include "unp.h"
 #include "Exception.h"
 
+using namespace std;
 
 #define ECHOFLAGS (ECHO | ECHOE | ECHOK | ECHONL)  
 
@@ -17,6 +19,7 @@ int readPassword(char* password, size_t len)
 	int c = 0; /* getchar() returns int */  
 	int n = 0;  
 
+	bzero(password, len);	
 	setDispMode(STDIN_FILENO, 0);
 	while(c != '\n') {
 		c = getchar();
@@ -30,6 +33,7 @@ int readPassword(char* password, size_t len)
 	password[n-1] = '\0';
 
 	setDispMode(STDIN_FILENO, 1);
+	cout << endl;
 	return n;  
 }  
 

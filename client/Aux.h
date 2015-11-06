@@ -6,6 +6,8 @@
 #include "unp.h"
 #include "Exception.h"
 
+using namespace std;
+
 /*------------------------------------------------------------------------
 					S I G N A L
 --------------------------------------------------------------------------
@@ -21,6 +23,33 @@ void sig_chld(int signo)
 		printf("***child %d of client terminated!***\n", pid);
 #endif
 	}
+}
+
+void sig_int(int signo)
+{
+	char input[MAXLINE];
+
+	cout << endl;
+	cout << "-------CTRL-C--------" << endl;	
+	cout << "1> Go On             "	<< endl; 
+	cout << "2> Back To Main Menu " << endl;
+	cout << "3> Quit"				<< endl;
+	cout << "---------------------" << endl;
+	cout << "Enter your choice: ";
+	fgets(input, MAXLINE, stdin);
+	input[strlen(input)-1] = '\0';
+	if(!strncmp(input, "1", strlen(input))) {
+		return;
+	} else if(!strcmp(input, "2")) {
+		cout << "Back to main menu(future develop)" << endl;
+		// here tmporary use exit 
+		exit(0);
+	} else if(!strcmp(input, "3")) {
+		cout << "System is exiting..." << endl;
+		exit(0);
+	} else {
+		cout << "Invalid input: please enter 1, 2 or 3" << endl;
+	}	
 }
 
 /*------------------------------------------------------------------------
