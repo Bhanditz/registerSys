@@ -14,7 +14,7 @@
 #define LOGIN_PORT	9511
 #define REGIS_PORT  9512
 
-enum toClient { DefaultC='0', LoginSuccess, LoginFail, RegisterSuccess, RegisterFail, UserNotExist, PwdError, UserExist };
+enum toClient { DefaultC='0', LoginSuccess, LoginFail, RegisterSuccess, RegisterFail, UserNotExist, PwdError, UserExist, DontReply };
 enum toServer { DefaultS='0', KeepTry, TurnToLogin, TurnToRegister, Quit };
 enum attributeType { UserName='a', Password, EMail, Gender, Phone, Street, City, State, ZipCode };
 

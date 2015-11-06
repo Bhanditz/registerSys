@@ -34,6 +34,10 @@ private:
 			checkFlag();
 			showMsg();
 			sem_post(&sem_r);
+			if(getBufferFlag() == DontReply) {
+				cout << endl;
+				continue;
+			}
 			if(getBufferFlag() != Password) {
 				getUserInput(input, sizeof(input));
 			} else {
@@ -73,19 +77,20 @@ private:
 			readPassword(first, sizeof(first));
 			cout << "Please enter the password again: ";
 			readPassword(second, sizeof(second));
+			if(strlen(first) < 6) {
+				cout << "[ERROR]: Password too short, it must contain at least 6 characters..." << endl;
+				cout << "Set up the password: ";
+				continue;
+			} 
 			// if two inputs are the same, then break
 			if(strcmp(first, second)) {
 				cout << "[ERROR]: Passwords typing are not the same..." << endl;
 				cout << "Set up the password: ";
 				continue;
 			} 
-			if(strlen(first) < 6) {
-				cout << "[ERROR]: Password too short, it must contain at least 6 characters..." << endl;
-				cout << "Set up the password: ";
-			} else {
-				break;
-			}	
+			break;
 		}	
+
 		strcpy(input, first);
 	}
 	
